@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using RMSUdpService.Lib;
 
 namespace RMSUdpService;
 
@@ -46,6 +47,44 @@ public class Worker : BackgroundService
                 _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
             }
             await Task.Delay(1000, stoppingToken);
+
+            // —оздаем новый поток дл€ запуска сервера
+            Thread serverThread;
+
+            if (serverType == ServerType.SSDP)
+            {
+                serverThread = new Thread(new ThreadStart(Srv.StartSSDPServer));
+                serverThread.Start();
+            }
+            else if (serverType == ServerType.RTC)
+            {
+                serverThread = new Thread(new ThreadStart(Srv.StartRTCServer));
+                serverThread.Start();
+            }
+            else if (serverType == ServerType.Notify)
+            {
+                serverThread = new Thread(new ThreadStart(Srv.StartSSDPNotification));
+                serverThread.Start();
+            }
+            else if (serverType == ServerType.ControlComand)
+            {
+                serverThread = new Thread(new ParameterizedThreadStart(Srv.SendControlCommand));
+                serverThread.Start("172.16.10.9");
+            }
+            else if (serverType == ServerType.RMS)
+            {
+                serverThread = new Thread(new ThreadStart(Srv.StartRMSServer));
+                serverThread.Start();
+            }
+            else
+            {
+                serverThread = Thread.CurrentThread;
+            }
+
+            // ќжидаем завершени€ работы сервера
+            serverThread.Join();
+
+
         }
     }
 }

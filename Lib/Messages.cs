@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using RMSUdpService.Model;
+using RMSUdpService.RTC;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
@@ -6,6 +8,23 @@ namespace RMSUdpService.Lib;
 
 public static class Messages
 {
+    public static void SendNotify(string _MulticastAddress, int _MulticastPort)
+    {
+        IPAddress multicastAddress = IPAddress.Parse(_MulticastAddress);
+
+        // Создаем UDP-сервер
+        using (UdpClient server = new UdpClient(_MulticastPort))
+        {
+            Console.WriteLine("Server started.");
+
+            // Присоединяемся к мультикаст-группе
+            server.JoinMulticastGroup(multicastAddress);
+
+            Console.WriteLine("Sending Notify requests...");
+            Messages.SendNotifyMessage(multicastAddress, server, _MulticastPort);
+        }
+    }
+
 
     /// <summary>
     /// При запуске сервера он рассылает multicast-сообщение NOTIFY
@@ -57,7 +76,7 @@ public static class Messages
     /// <summary>
     /// При запуске сервера он рассылает multicast-сообщение NOTIFY
     /// </summary>
-    public static void SendNotifyMessage(IPAddress multicastAddress, UdpClient server, int _MulticastPort)
+    public static void SendNotifyMessage(IPAddress multicastAddress, UdpClient server, int multicastPort)
     {
         try
         {
@@ -65,7 +84,7 @@ public static class Messages
             // Отправляем Notify
             byte[] notifyBytes = Encoding.UTF8.GetBytes(notify);
 
-            IPEndPoint endPoint = new IPEndPoint(multicastAddress, _MulticastPort);
+            IPEndPoint endPoint = new IPEndPoint(multicastAddress, multicastPort);
 
             server.Send(notifyBytes, notifyBytes.Length, endPoint);
         }
@@ -74,4 +93,34 @@ public static class Messages
             Console.WriteLine(ex.ToString());
         }
     }
+
+    public static void SendControlCommand(string robotAdr = "172.16.10.9")
+    {
+        IPAddress robotAddress = IPAddress.Parse(robotAdr);
+
+        int commandType = 0;
+
+        UDPClient udpClient = new UDPClient(robotAddress);
+
+        if (commandType == 0)
+        {
+            udpClient.SendEcho();
+
+            RTCServer srv = new RTCServer(udpClient.GetClient);
+            srv.ReceiveData(IPAddress.Any);
+
+        }
+        else if (commandType == 1)
+        {
+            udpClient.SendControlCommand(10, 10);
+        }
+        else if (commandType == 2)
+        {
+            StateReport stateReport = new StateReport() { };
+
+            udpClient.SendStateReport(stateReport);
+        }
+    }
+
+
 }
