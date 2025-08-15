@@ -4,6 +4,7 @@ using RMSUdpService.Model;
 using RMSUdpService.RTC;
 using RMSUdpService.SSDP;
 using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -11,6 +12,7 @@ using System.Net.Sockets;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace RMSUdpService.Lib
 {
@@ -19,6 +21,11 @@ namespace RMSUdpService.Lib
         public static int _MulticastPort { get; set; }
 
         public static string? _MulticastAddress {get; set;}
+        public static HttpClient client { get; private set; }
+        public static string baseUrl { get; private set; }
+
+        private static System.Timers.Timer _timer;
+
 
         /// <summary>
         /// При включении каждого робота его SSDP-клиент отправляет multicast запрос «M-SEARCH», 
@@ -114,15 +121,37 @@ namespace RMSUdpService.Lib
             RMSClient.RunAsync();
         }
 
-        internal static void StartRTCServer()
+        public static void StartRTCServer(object parameters)
         {
-            throw new NotImplementedException();
+            RTCServer rtcServer = new RTCServer();
+
+            rtcServer.client = client;
+            rtcServer.baseUrl = baseUrl;
+
+            rtcServer.Start();
         }
 
-        internal static void StartSSDPNotification()
+        private static void OnTimedEvent(Object source, ElapsedEventArgs e)
         {
-            throw new NotImplementedException();
+            Lib.Messages.SendNotify(_MulticastAddress, _MulticastPort);
         }
-        
+
+        public static void StartSSDPNotification()
+        {
+            _timer = new System.Timers.Timer(30000);
+            _timer.Elapsed += OnTimedEvent;
+            _timer.AutoReset = true; // Повторять событие
+            _timer.Enabled = true; // Запускаем таймер
+
+
+            Console.WriteLine("Нажмите Enter для выхода...");
+            Console.ReadLine();
+
+            // Останавливаем таймер перед выходом
+            _timer.Stop();
+            _timer.Dispose();
+
+        }
+
     }
 }

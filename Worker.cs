@@ -20,8 +20,8 @@ public class Worker : BackgroundService
 
     private static ServerType serverType;
 
-    private static readonly HttpClient client = new HttpClient();
-    private static System.Timers.Timer _timer;
+    private static readonly HttpClient _client = new HttpClient();
+    
     private readonly ILogger<Worker> _logger;
 
     public Worker(ILogger<Worker> logger, IConfiguration configuration)
@@ -58,8 +58,15 @@ public class Worker : BackgroundService
             }
             else if (serverType == ServerType.RTC)
             {
-                serverThread = new Thread(new ThreadStart(Srv.StartRTCServer));
-                serverThread.Start();
+                var commandParams = new CommandParameters
+                {
+                    RobotAddress = "",
+                    Client = _client,
+                    BaseUrl = _baseUrl
+                };
+
+                serverThread = new Thread(new ParameterizedThreadStart(Srv.StartRTCServer));
+                serverThread.Start(commandParams);
             }
             else if (serverType == ServerType.Notify)
             {
