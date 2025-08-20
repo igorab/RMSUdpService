@@ -8,11 +8,12 @@ namespace RMSUdpService.RTC;
 
 public class RTCServer
 {
-    public HttpClient client; // = new HttpClient();
-    public string baseUrl; // = "https://localhost:7038/api/RMS/";
+    public HttpClient? client { private get; set; } // = new HttpClient();
 
+    public string? baseUrl { private get; set; } // = "https://localhost:7038/api/RMS/";
 
     private UdpClient _UdpServer;
+
     private const int Port = 6633;
 
     public RTCServer()

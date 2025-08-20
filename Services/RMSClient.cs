@@ -7,8 +7,9 @@ namespace RMSUDPAgent.Services;
 
 internal class RMSClient
 {
-    private static  HttpClient client = new HttpClient();
-    private static  string baseUrl = "https://localhost:7038/api/RMS/";
+    private static HttpClient? client { get; set; } = new HttpClient();
+
+    private static string? baseUrl { get; set; } = "https://localhost:7038/api/RMS/";
 
     private static Pose _Pose  = new Pose() { x = 10.5f, y = 20.3f, heading = 1.57f };
     private static Header _Header = new Header { msgType = MsgType.MsgStateReport, version = 1, robotId = Guid.NewGuid(), timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
@@ -24,7 +25,7 @@ internal class RMSClient
         progress = 50.0f
     };
 
-    public static void RunStateReport(StateReport stateReport, HttpClient httpClient, string url)
+    public static async void RunStateReport(StateReport stateReport, HttpClient? httpClient, string? url)
     {
         _StateReport = stateReport;
         _Header = stateReport.header;
@@ -33,19 +34,25 @@ internal class RMSClient
         client = httpClient;
         baseUrl = url;
 
-        RunAsync();
+        await RunAsync();
     }
 
     
     public static async Task RunAsync()
     {
-        var robotApiClient = new RobotApiClient(client, baseUrl);
+        if (client == null)
+        {
+            return;
+            // log
+        }
+
+        var robotApiClient = new RobotApiClient(client, baseUrl??"");
 
         // Создание заголовка робота
         var robotHeader = new RobotHeaderDto((byte)_Header.msgType, _Header.version, _Header.robotId, _Header.timestamp);
         
         var createdHeader = await robotApiClient.CreateRobotHeader(robotHeader);
-        Console.WriteLine($"Created RobotHeader with ID: {createdHeader.Id}");
+        Console.WriteLine($"Created RobotHeader with ID: {createdHeader?.Id}");
 
         // Создание позы
         var pose = new PoseDto

@@ -18,14 +18,21 @@ namespace RMSUdpService.Lib
 {
     public static class Srv
     {
-        public static int _MulticastPort { get; set; }
+        /// <summary>
+        /// multicast port
+        /// </summary>
+        public static int MulticastPort { private get; set; }
+        /// <summary>
+        /// multicast address
+        /// </summary>
+        public static string? MulticastAddress { private get; set; }
+        /// <summary>
+        /// base url
+        /// </summary>
+        public static string? BaseUrl { private get; set; }
+        public static ILogger<Worker> Logger { get; internal set; }
 
-        public static string? _MulticastAddress {get; set;}
-        public static HttpClient client { get; private set; }
-        public static string baseUrl { get; private set; }
-
-        private static System.Timers.Timer _timer;
-
+        private static System.Timers.Timer? _timer;
 
         /// <summary>
         /// При включении каждого робота его SSDP-клиент отправляет multicast запрос «M-SEARCH», 
@@ -35,12 +42,13 @@ namespace RMSUdpService.Lib
         /// </summary>
         public static void StartSSDPServer()
         {
-            IPAddress multicastAddress = IPAddress.Parse(_MulticastAddress);
+            IPAddress multicastAddress = IPAddress.Parse(MulticastAddress??"");
 
             // Создаем UDP-сервер
-            using (UdpClient server = new UdpClient(_MulticastPort))
+            using (UdpClient server = new UdpClient(MulticastPort))
             {
-                Console.WriteLine("Server started.");
+                Logger.LogInformation("Server started.");
+                //Console.WriteLine("Server started.");
 
                 // Присоединяемся к мультикаст-группе
                 server.JoinMulticastGroup(multicastAddress);
@@ -48,9 +56,10 @@ namespace RMSUdpService.Lib
                 Console.WriteLine("Sending Notify requests...");
 
                 // Отправляем Notify
-                Messages.SendNotifyMessage(multicastAddress, server, _MulticastPort);
+                Messages.SendNotifyMessage(multicastAddress, server, MulticastPort);
 
-                Console.WriteLine("Listening for SSDP requests...");
+                Logger.LogInformation("Listening for SSDP requests...");
+                //Console.WriteLine("Listening for SSDP requests...");
 
                 while (true)
                 {
@@ -77,10 +86,7 @@ namespace RMSUdpService.Lib
 
                         // Отправляем ответ
                         byte[] responseBytes = Encoding.UTF8.GetBytes(response);
-                        server.Send(responseBytes, responseBytes.Length, remoteEndPoint);
-
-                        //UDPClient uDPClient = new UDPClient(remoteEndPoint.ToString());
-                        //uDPClient.SendEcho();
+                        server.Send(responseBytes, responseBytes.Length, remoteEndPoint);                        
                     }
                 }
             }
@@ -116,26 +122,20 @@ namespace RMSUdpService.Lib
             }
         }
 
-        internal static void StartRMSServer()
+        public async static void StartRMSServer()
         {
-            RMSClient.RunAsync();
+            await RMSClient.RunAsync();
         }
 
-        public static void StartRTCServer(object parameters)
-        {
-            RTCServer rtcServer = new RTCServer();
-
-            rtcServer.client = client;
-            rtcServer.baseUrl = baseUrl;
-
-            rtcServer.Start();
-        }
-
+        
         private static void OnTimedEvent(Object source, ElapsedEventArgs e)
         {
-            Lib.Messages.SendNotify(_MulticastAddress, _MulticastPort);
+            Lib.Messages.SendNotify(MulticastAddress, MulticastPort);
         }
 
+        /// <summary>
+        /// отправлять notify через интервал времени
+        /// </summary>
         public static void StartSSDPNotification()
         {
             _timer = new System.Timers.Timer(30000);

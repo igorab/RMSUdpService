@@ -14,13 +14,15 @@ internal class RobotApiClient
         _baseUrl = baseUrl;
     }
 
-    public async Task<RobotHeaderDto> CreateRobotHeader(RobotHeaderDto robotHeader)
+    public async Task<RobotHeaderDto?> CreateRobotHeader(RobotHeaderDto robotHeader)
     {
         try
         {
             var response = await _httpClient.PostAsJsonAsync(_baseUrl + "headers", robotHeader);
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<RobotHeaderDto>();
+            HttpContent content = response.Content;
+            RobotHeaderDto? header  = await content.ReadFromJsonAsync<RobotHeaderDto>();
+            return header;
         }
         catch (Exception ex)
         {
