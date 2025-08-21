@@ -1,4 +1,5 @@
-﻿using RMSUDPAgent.Services;
+﻿using Microsoft.Extensions.Logging;
+using RMSUDPAgent.Services;
 using RMSUdpService.Model;
 using System.Net;
 using System.Net.Sockets;
@@ -8,13 +9,18 @@ namespace RMSUdpService.RTC;
 
 public class RTCServer
 {
-    public HttpClient? client { private get; set; } // = new HttpClient();
+    public HttpClient? HttpClient { private get; set; }
 
-    public string? baseUrl { private get; set; } // = "https://localhost:7038/api/RMS/";
+    /// <summary>
+    ///например  "https://localhost:7038/api/RMS/"
+    /// </summary>
+    public string? BaseUrl { private get; set; } 
+    public ILogger<Worker>? Logger { get; internal set; }
 
     private UdpClient _UdpServer;
 
-    private const int Port = 6633;
+
+    private const int Port = 6633; //TODO refactoring
 
     public RTCServer()
     {
@@ -36,7 +42,7 @@ public class RTCServer
 
     public void Start()
     {
-        Console.WriteLine("RTC Server started...");
+        Logger?.LogInformation("RTC Server started...");
         while (true)
         {
             IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, Port);
@@ -53,7 +59,7 @@ public class RTCServer
         // Проверка версии
         if (header.version != 1)
         {
-            Console.WriteLine("Unsupported version.");
+            Logger?.LogInformation("Unsupported version.");
             return;
         }
 
@@ -61,25 +67,25 @@ public class RTCServer
         switch (header.msgType)
         {
             case MsgType.MsgEcho:
-                Console.WriteLine("Received Echo request.");
+                Logger?.LogInformation("Received Echo request.");
                 // Отправить ответ, если необходимо
                 break;
             case MsgType.MsgControlCommand:
                 // Десериализация полезной нагрузки
                 ControlCommand command = ByteArrayToStructure<ControlCommand>( data[Marshal.SizeOf<Header>()..] );
-                Console.WriteLine($"Received Control Command: Speed={command.speed}, Turn={command.turn}");
+                Logger?.LogInformation($"Received Control Command: Speed={command.speed}, Turn={command.turn}");
                 break;
             case MsgType.MsgStateReport:
                 int from = Marshal.SizeOf<StateReport>();
                 byte[] bytes = data[..];
                 StateReport stateReport = ByteArrayToStructure<StateReport>(bytes);
 
-                RMSClient.RunStateReport(stateReport, client, baseUrl);
+                RMSClient.RunStateReport(stateReport, HttpClient, BaseUrl);
 
-                Console.WriteLine("Received State Report.");
+                Logger?.LogInformation("Received State Report.");
                 break;
             default:
-                Console.WriteLine("Unknown message type.");
+                Logger?.LogInformation("Unknown message type.");
                 break;
         }
     }

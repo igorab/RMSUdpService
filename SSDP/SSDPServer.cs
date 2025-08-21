@@ -10,6 +10,8 @@ namespace RMSUdpService.SSDP;
 
 public class SSDPServer
 {
+    public static ILogger<Worker>? Logger { private get; set; }
+
     /// <summary>
     /// // Парсим запрос
     /// </summary>
@@ -54,15 +56,15 @@ public class SSDPServer
     /// <param name="remoteEndPoint"></param>
     public static void LogRequestDetails(SSDPRequest request, IPEndPoint remoteEndPoint)
     {
-        Console.WriteLine($"Request from: {remoteEndPoint.Address}:{remoteEndPoint.Port}");
-        Console.WriteLine($"Method: {request.Method}");
+        Logger?.LogInformation($"Request from: {remoteEndPoint.Address}:{remoteEndPoint.Port}");
+        Logger?.LogInformation($"Method: {request.Method}");
 
-        Console.WriteLine("Headers:");
+        Logger?.LogInformation("Headers:");
         foreach (var header in request.Headers)
         {
-            Console.WriteLine($"  {header.Key}: {header.Value}");
+            Logger?.LogInformation($"  {header.Key}: {header.Value}");
         }
-        Console.WriteLine();
+        Logger?.LogInformation("-----");
     }
 
     /// <summary>

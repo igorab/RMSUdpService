@@ -4,19 +4,22 @@ namespace RMSUdpService.Lib
 {
     public static class SrvRtc
     {
+        public static ILogger<Worker>? Logger { private get; set; }
+
         public static void StartRTCServer(object? parameters)
         {
             CommandParameters? commandParams = parameters as CommandParameters;
             if (commandParams == null)
             {
-                // log
+                Logger?.LogInformation($@"{nameof(StartRTCServer)}:  wrong params");
                 return;
             }
 
             RTCServer rtcServer = new RTCServer();
 
-            rtcServer.client = commandParams.Client;
-            rtcServer.baseUrl = commandParams.BaseUrl;
+            rtcServer.HttpClient = commandParams.Client;
+            rtcServer.BaseUrl = commandParams.BaseUrl;
+            rtcServer.Logger = Logger;
 
             rtcServer.Start();
         }

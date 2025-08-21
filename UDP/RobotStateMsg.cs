@@ -1,14 +1,17 @@
-﻿using System;
+﻿using RMSUdpService;
+using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.IO;
 
 namespace RMSUDPAgent.UDP;
 
 class RobotStateMsg
 {
+    public static ILogger<Worker>? Logger { private get; set; }
+
     public void Init()
     {
         // Создаем экземпляр пакета состояния робота
@@ -48,11 +51,11 @@ class RobotStateMsg
 
                 // Отправляем данные
                 udpClient.Send(data, data.Length, endPoint);
-                Console.WriteLine("Данные отправлены на {0}:{1}", ipAddress, port);
+                Logger?.LogInformation("Данные отправлены на {0}:{1}", ipAddress, port);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Ошибка при отправке данных: " + ex.Message);
+                Logger?.LogInformation("Ошибка при отправке данных: " + ex.Message);
             }
         }
     }

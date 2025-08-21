@@ -12,7 +12,10 @@ namespace RMSUdpService.RTC
 {
     public class UDPClient
     {
+        public ILogger<Worker>? Logger { get; internal set; }
+
         private UdpClient udpClient;
+        //TODO refactoring
         private const int Port = 6633;
         private IPEndPoint remoteEndPoint;
 
@@ -24,6 +27,9 @@ namespace RMSUdpService.RTC
             remoteEndPoint = new IPEndPoint(ipAddress, Port);
         }
 
+        /// <summary>
+        /// Echo message
+        /// </summary>
         public void SendEcho()
         {
             Header header = new Header(MsgType.MsgEcho, Guid.NewGuid()); // Пример robotID
@@ -36,12 +42,17 @@ namespace RMSUdpService.RTC
             byte[] packet = new byte[headerBytes.Length + payload.Length];
 
             Buffer.BlockCopy(headerBytes, 0, packet, 0, headerBytes.Length);
-            //Buffer.BlockCopy(payload, 0, packet, headerBytes.Length, payload.Length);
-
+            
             udpClient.Send(packet, packet.Length, remoteEndPoint);
-            Console.WriteLine("Echo request sent.");
+
+            Logger?.LogInformation("Echo request sent.");
         }
 
+        /// <summary>
+        ///  Control command to robot
+        /// </summary>
+        /// <param name="speed"></param>
+        /// <param name="turn"></param>
         public void SendControlCommand(float speed, float turn)
         {
             Header header = new Header(MsgType.MsgControlCommand, Guid.NewGuid()); // Пример robotId
@@ -55,7 +66,7 @@ namespace RMSUdpService.RTC
             Buffer.BlockCopy(commandBytes, 0, packet, headerBytes.Length, commandBytes.Length);
 
             udpClient.Send(packet, packet.Length, remoteEndPoint);
-            Console.WriteLine($"Control command sent: Speed={speed}, Turn={turn}");
+            Logger?.LogInformation($"Control command sent: Speed={speed}, Turn={turn}");
         }
 
         public void SendStateReport(StateReport stateReport)
@@ -69,7 +80,7 @@ namespace RMSUdpService.RTC
             Buffer.BlockCopy(stateReportBytes, 0, packet, headerBytes.Length, stateReportBytes.Length);
 
             udpClient.Send(packet, packet.Length, remoteEndPoint);
-            Console.WriteLine("State report sent.");
+            Logger?.LogInformation("State report sent.");
         }
 
         private byte[] StructureToByteArray<T>(T structure) where T : struct

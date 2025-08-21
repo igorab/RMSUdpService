@@ -53,7 +53,7 @@ public class Worker : BackgroundService
             Srv.MulticastAddress = _multicastAddress; 
             Srv.MulticastPort    = _multicastPort;
             Srv.BaseUrl          = _baseUrl;
-            Srv.Logger = _logger;
+            Srv.Logger           = _logger;
 
             if (serverType == ServerType.SSDP)
             {
@@ -62,11 +62,13 @@ public class Worker : BackgroundService
             }
             else if (serverType == ServerType.RTC)
             {
+                SrvRtc.Logger = _logger;
+
                 var commandParams = new CommandParameters
                 {
                     RobotAddress = "",
                     Client = _client,
-                    BaseUrl = _baseUrl
+                    BaseUrl = _baseUrl                    
                 };
 
                 serverThread = new Thread(new ParameterizedThreadStart(SrvRtc.StartRTCServer));

@@ -1,4 +1,5 @@
-﻿using RMSUdpService.DTOs;
+﻿using RMSUdpService;
+using RMSUdpService.DTOs;
 using RMSUdpService.Model;
 using RMSUdpService.RTC;
 using System.Buffers.Text;
@@ -7,11 +8,11 @@ namespace RMSUDPAgent.Services;
 
 internal class RMSClient
 {
+    public static ILogger<Worker>? Logger { get; internal set; }
     private static HttpClient? client { get; set; } = new HttpClient();
-
     private static string? baseUrl { get; set; } = "https://localhost:7038/api/RMS/";
 
-    private static Pose _Pose  = new Pose() { x = 10.5f, y = 20.3f, heading = 1.57f };
+    private static Pose _Pose  = new Pose() { x = 0, y = 0, heading = 0 };
     private static Header _Header = new Header { msgType = MsgType.MsgStateReport, version = 1, robotId = Guid.NewGuid(), timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
     private static StateReport _StateReport = new StateReport() {
         velocity = 1.5f,
@@ -37,14 +38,14 @@ internal class RMSClient
         await RunAsync();
     }
 
-    
+    /// <summary>
+    ///  Go!
+    /// </summary>
+    /// <returns></returns>
     public static async Task RunAsync()
     {
-        if (client == null)
-        {
-            return;
-            // log
-        }
+        if (client == null) Logger?.LogInformation($@"{nameof(RunAsync)}: wrong params");
+        
 
         var robotApiClient = new RobotApiClient(client, baseUrl??"");
 
@@ -52,7 +53,7 @@ internal class RMSClient
         var robotHeader = new RobotHeaderDto((byte)_Header.msgType, _Header.version, _Header.robotId, _Header.timestamp);
         
         var createdHeader = await robotApiClient.CreateRobotHeader(robotHeader);
-        Console.WriteLine($"Created RobotHeader with ID: {createdHeader?.Id}");
+        Logger?.LogInformation($"Created RobotHeader with ID: {createdHeader?.Id}");
 
         // Создание позы
         var pose = new PoseDto
@@ -63,7 +64,7 @@ internal class RMSClient
         };
 
         var createdPose = await robotApiClient.CreatePose(pose);
-        Console.WriteLine($"Created Pose with ID: {createdPose.Id}");
+        Logger?.LogInformation($"Created Pose with ID: {createdPose.Id}");
 
         // Создание отчета о состоянии
         var stateReport = new StateReportDto
@@ -83,6 +84,6 @@ internal class RMSClient
         };
 
         var createdReport = await robotApiClient.CreateStateReport(stateReport);
-        Console.WriteLine($"Created StateReport for Id: {createdReport.Id}");
+        Logger?.LogInformation($"Created StateReport for Id: {createdReport.Id}");
     }
 }

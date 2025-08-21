@@ -1,5 +1,7 @@
-﻿using RMSUdpService.Model;
+﻿using Microsoft.Extensions.Logging;
+using RMSUdpService.Model;
 using RMSUdpService.RTC;
+using Serilog.Core;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -8,6 +10,8 @@ namespace RMSUdpService.Lib;
 
 public static class Messages
 {
+    public static ILogger<Worker>? Logger { get; internal set; }
+
     public static void SendNotify(string _MulticastAddress, int _MulticastPort)
     {
         IPAddress multicastAddress = IPAddress.Parse(_MulticastAddress);
@@ -15,12 +19,13 @@ public static class Messages
         // Создаем UDP-сервер
         using (UdpClient server = new UdpClient(_MulticastPort))
         {
-            Console.WriteLine("Server started.");
+            Logger?.LogInformation("Server started.");
 
             // Присоединяемся к мультикаст-группе
             server.JoinMulticastGroup(multicastAddress);
 
-            Console.WriteLine("Sending Notify requests...");
+            Logger?.LogInformation("Sending Notify requests...");
+
             Messages.SendNotifyMessage(multicastAddress, server, _MulticastPort);
         }
     }
@@ -33,7 +38,7 @@ public static class Messages
     /// <returns></returns>
     static string NotifyMulticastRequest(IPAddress clientAddress)
     {
-        Console.WriteLine("Send Notify to: " + clientAddress);
+        Logger?.LogInformation("Send Notify to: " + clientAddress);
 
         string request = "NOTIFY * HTTP/1.1\r\n" +
                          "HOST: 239.255.255.250:1900\r\n" +
@@ -45,7 +50,7 @@ public static class Messages
                          "USN: uuid:01234567-0123-0123-0123-0123456789ab::urn:NTLS:service:RMSPrivateServer:1.0\r\n" +
                          "\r\n";
 
-        Console.WriteLine(request);
+        Logger?.LogInformation(request);
 
         return request;
     }
@@ -54,8 +59,8 @@ public static class Messages
 
     public static string ProcessSSDPRequest(string request, IPAddress clientAddress)
     {
-        Console.WriteLine("Received request from: " + clientAddress);
-        Console.WriteLine(request);
+        Logger?.LogInformation("Received request from: " + clientAddress);
+        Logger?.LogInformation(request);
 
         // Формируем ответ
         string response = "HTTP/1.1 200 OK\r\n" +
@@ -68,7 +73,7 @@ public static class Messages
                               "USN: uuid: 01234567 - 0123 - 0123 - 0123 - 0123456789ab::urn:NTLS: service: RMSPrivateServer: 1.0\r\n" +
                               "\r\n";
 
-        Console.WriteLine(response);
+        Logger?.LogInformation(response);
 
         return response;
     }
@@ -90,7 +95,7 @@ public static class Messages
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.ToString());
+            Logger?.LogInformation(ex.ToString());
         }
     }
 
@@ -101,6 +106,7 @@ public static class Messages
         int commandType = 0;
 
         UDPClient udpClient = new UDPClient(robotAddress);
+        udpClient.Logger = Logger;
 
         if (commandType == 0)
         {

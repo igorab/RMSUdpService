@@ -30,7 +30,7 @@ namespace RMSUdpService.Lib
         /// base url
         /// </summary>
         public static string? BaseUrl { private get; set; }
-        public static ILogger<Worker> Logger { get; internal set; }
+        public static ILogger<Worker>? Logger { get; internal set; }
 
         private static System.Timers.Timer? _timer;
 
@@ -44,23 +44,23 @@ namespace RMSUdpService.Lib
         {
             IPAddress multicastAddress = IPAddress.Parse(MulticastAddress??"");
 
+            Messages.Logger = Logger;
+
             // Создаем UDP-сервер
             using (UdpClient server = new UdpClient(MulticastPort))
             {
-                Logger.LogInformation("Server started.");
-                //Console.WriteLine("Server started.");
-
+                Logger?.LogInformation("Server started.");
+                
                 // Присоединяемся к мультикаст-группе
                 server.JoinMulticastGroup(multicastAddress);
 
-                Console.WriteLine("Sending Notify requests...");
+                Logger?.LogInformation("Sending Notify requests...");
 
                 // Отправляем Notify
                 Messages.SendNotifyMessage(multicastAddress, server, MulticastPort);
 
-                Logger.LogInformation("Listening for SSDP requests...");
-                //Console.WriteLine("Listening for SSDP requests...");
-
+                Logger?.LogInformation("Listening for SSDP requests...");
+                
                 while (true)
                 {
                     // Получаем SSDP-запрос
@@ -96,11 +96,12 @@ namespace RMSUdpService.Lib
         {            
             string? robotAdr = paramRobotAdr as string;
 
-            IPAddress robotAddress = IPAddress.Parse(robotAdr);
+            IPAddress robotAddress = IPAddress.Parse(robotAdr??"");
 
             int commandType = 0;
 
             UDPClient udpClient = new UDPClient(robotAddress);
+            udpClient.Logger = Logger;
 
             if (commandType == 0)
             {
@@ -124,13 +125,14 @@ namespace RMSUdpService.Lib
 
         public async static void StartRMSServer()
         {
+            RMSClient.Logger = Logger;
             await RMSClient.RunAsync();
         }
 
         
         private static void OnTimedEvent(Object source, ElapsedEventArgs e)
         {
-            Lib.Messages.SendNotify(MulticastAddress, MulticastPort);
+            Lib.Messages.SendNotify(MulticastAddress??"", MulticastPort);
         }
 
         /// <summary>
