@@ -12,6 +12,8 @@ public static class Messages
 {
     public static ILogger<Worker>? Logger { get; internal set; }
 
+    public static string? RobotAddress {private get; set; }
+
     public static void SendNotify(string _MulticastAddress, int _MulticastPort)
     {
         IPAddress multicastAddress = IPAddress.Parse(_MulticastAddress);
@@ -99,9 +101,15 @@ public static class Messages
         }
     }
 
-    public static void SendControlCommand(string robotAdr = "172.16.10.9")
+    public static void SendControlCommand()
     {
-        IPAddress robotAddress = IPAddress.Parse(robotAdr);
+        if (string.IsNullOrEmpty(RobotAddress))
+        {
+            Logger?.LogInformation("Robot Address is empty");
+            return;
+        }
+
+        IPAddress robotAddress = IPAddress.Parse(RobotAddress);
 
         int commandType = 0;
 
