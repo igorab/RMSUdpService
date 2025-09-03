@@ -14,18 +14,14 @@ namespace RMSUdpService;
 public class Worker : BackgroundService
 {
     private const string AppSettings = "AppSettings:";
-    private const int Milliseconds = 1000;
-
-    private const string RobotAddress = "172.16.10.9";
-
-
-    private static string? _baseUrl ;       
-    private static string? _multicastAddress;
-    private static int _multicastPort;
-    private static int _port;
-
-    private static ServerType serverType;
-
+    private const int DelayMillisec = 1000;
+    
+    private static string? _BaseUrl ;       
+    private static string? _MulticastAddress;
+    private static int _MulticastPort;
+    private static int _Port;
+    private static string? _RobotAddress;
+    
     private static readonly HttpClient _client = new HttpClient();
     
     private readonly ILogger<Worker> _logger;
@@ -33,21 +29,19 @@ public class Worker : BackgroundService
     public Worker(ILogger<Worker> logger, IConfiguration configuration)
     {
         _logger = logger;
-
-        serverType = ServerType.SSDP;
-
+        
         // Устанавливаем параметры для SSDP
-        _baseUrl = configuration[AppSettings + "BaseUrl"];
-        _multicastAddress = configuration[AppSettings + "MulticastAddress"];
-        _multicastPort = configuration.GetValue<int>(AppSettings + "MulticastPort");
-        _port = configuration.GetValue<int>(AppSettings + "Port");
-
-        Messages.RobotAddress = RobotAddress;
+        _BaseUrl = configuration[AppSettings + "BaseUrl"];
+        _MulticastAddress = configuration[AppSettings + "MulticastAddress"];
+        _MulticastPort = configuration.GetValue<int>(AppSettings + "MulticastPort");
+        _Port = configuration.GetValue<int>(AppSettings + "Port");
+        _RobotAddress = configuration.GetValue<string>(AppSettings + "RobotAddress");
+        Messages.RobotAddress = _RobotAddress;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        ServerType serverTypes = ServerType.SSDP | ServerType.RTC | ServerType.UDP;
+        ServerType serverTypes = ServerType.SSDP | ServerType.RTC ;
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -55,14 +49,14 @@ public class Worker : BackgroundService
             {
                 _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
             }
-            await Task.Delay(Milliseconds, stoppingToken);
+            await Task.Delay(DelayMillisec, stoppingToken);
 
             // Создаем новый поток для запуска сервера
             Thread serverThread = Thread.CurrentThread; 
 
-            Srv.MulticastAddress = _multicastAddress; 
-            Srv.MulticastPort    = _multicastPort;
-            Srv.BaseUrl          = _baseUrl;
+            Srv.MulticastAddress = _MulticastAddress; 
+            Srv.MulticastPort    = _MulticastPort;
+            Srv.BaseUrl          = _BaseUrl;
             Srv.Logger           = _logger;
 
             if (serverTypes.HasFlag( ServerType.SSDP))
@@ -79,7 +73,8 @@ public class Worker : BackgroundService
                 {
                     RobotAddress = "",
                     Client = _client,
-                    BaseUrl = _baseUrl                    
+                    BaseUrl = _BaseUrl,
+                    Port    = _Port
                 };
 
                 serverThread = new Thread(new ParameterizedThreadStart(SrvRtc.StartRTCServer));
@@ -95,7 +90,7 @@ public class Worker : BackgroundService
             if (serverTypes.HasFlag(ServerType.ControlComand))
             {
                 serverThread = new Thread(new ParameterizedThreadStart(Srv.SendControlCommand));
-                serverThread.Start(RobotAddress);
+                serverThread.Start(_RobotAddress);
             }
 
             if (serverTypes.HasFlag(ServerType.RMS))

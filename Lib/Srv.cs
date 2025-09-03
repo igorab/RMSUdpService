@@ -92,18 +92,18 @@ namespace RMSUdpService.Lib
             }
         }
 
-        public static void SendControlCommand(object paramRobotAdr)
+        public static void SendControlCommand(object? paramRobotAdr)
         {            
             string? robotAdr = paramRobotAdr as string;
 
             IPAddress robotAddress = IPAddress.Parse(robotAdr??"");
 
-            int commandType = 0;
+            MsgType commandType = 0;
 
             UDPClient udpClient = new UDPClient(robotAddress);
             udpClient.Logger = Logger;
 
-            if (commandType == 0)
+            if (commandType == MsgType.MsgEcho)
             {
                 udpClient.SendEcho();
 
@@ -111,11 +111,11 @@ namespace RMSUdpService.Lib
                 srv.ReceiveData(IPAddress.Any);
 
             }
-            else if (commandType == 1)
+            else if (commandType == MsgType.MsgControlCommand)
             {
-                udpClient.SendControlCommand(10, 10);
+                udpClient.SendControlCommand(0, 0);
             }
-            else if (commandType == 2)
+            else if (commandType == MsgType.MsgStateReport)
             {
                 StateReport stateReport = new StateReport() { };
 

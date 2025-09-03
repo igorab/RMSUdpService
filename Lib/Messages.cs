@@ -111,12 +111,12 @@ public static class Messages
 
         IPAddress robotAddress = IPAddress.Parse(RobotAddress);
 
-        int commandType = 0;
+        MsgType commandType = 0;
 
         UDPClient udpClient = new UDPClient(robotAddress);
         udpClient.Logger = Logger;
 
-        if (commandType == 0)
+        if (commandType == MsgType.MsgEcho)
         {
             udpClient.SendEcho();
 
@@ -124,11 +124,11 @@ public static class Messages
             srv.ReceiveData(IPAddress.Any);
 
         }
-        else if (commandType == 1)
+        else if (commandType == MsgType.MsgControlCommand)
         {
             udpClient.SendControlCommand(10, 10);
         }
-        else if (commandType == 2)
+        else if (commandType == MsgType.MsgStateReport)
         {
             StateReport stateReport = new StateReport() { };
 

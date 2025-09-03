@@ -14,14 +14,14 @@ public class RTCServer
     /// <summary>
     ///например  "https://localhost:7038/api/RMS/"
     /// </summary>
-    public string? BaseUrl { private get; set; } 
+    public string? BaseUrl { private get; set; }
+    public int Port { private get; set; }
+
     public ILogger<Worker>? Logger { get; internal set; }
 
     private UdpClient _UdpServer;
 
-
-    private const int Port = 6633; //TODO refactoring
-
+   
     public RTCServer()
     {
         _UdpServer = new UdpClient(Port);
@@ -38,7 +38,6 @@ public class RTCServer
         byte[] receivedBytes = _UdpServer.Receive(ref remoteEndPoint);
         ProcessReceivedData(receivedBytes, remoteEndPoint);
     }
-
 
     public void Start()
     {

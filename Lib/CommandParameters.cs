@@ -5,6 +5,7 @@ namespace RMSUdpService.Lib
     {
         public string? RobotAddress { get; set; }
         public HttpClient? Client { get; set; }
-        public string? BaseUrl { get; set; }        
+        public string? BaseUrl { get; set; }
+        public int Port { get; set; }
     }
 }

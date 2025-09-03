@@ -19,6 +19,7 @@ namespace RMSUdpService.Lib
 
             rtcServer.HttpClient = commandParams.Client;
             rtcServer.BaseUrl = commandParams.BaseUrl;
+            rtcServer.Port = commandParams.Port;
             rtcServer.Logger = Logger;
 
             rtcServer.Start();

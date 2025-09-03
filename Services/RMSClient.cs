@@ -9,11 +9,18 @@ namespace RMSUDPAgent.Services;
 internal class RMSClient
 {
     public static ILogger<Worker>? Logger { get; internal set; }
-    private static HttpClient? client { get; set; } = new HttpClient();
-    private static string? baseUrl { get; set; } = "https://localhost:7038/api/RMS/";
+    private static HttpClient? Http_client { get; set; } = new HttpClient();
+
+    //example "https://localhost:7038/api/RMS/"
+    private static string? BaseUrl { get; set; }
 
     private static Pose _Pose  = new Pose() { x = 0, y = 0, heading = 0 };
-    private static Header _Header = new Header { msgType = MsgType.MsgStateReport, version = 1, robotId = Guid.NewGuid(), timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
+
+    private static Header _Header = new Header { msgType = MsgType.MsgStateReport, 
+             version = 1, 
+             robotId = Guid.NewGuid(), 
+             timestamp = (ulong)DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()};
+
     private static StateReport _StateReport = new StateReport() {
         velocity = 1.5f,
         angularVelocity = 0.5f,
@@ -32,8 +39,8 @@ internal class RMSClient
         _Header = stateReport.header;
         _Pose   = stateReport.targetPose;
 
-        client = httpClient;
-        baseUrl = url;
+        Http_client = httpClient;
+        BaseUrl = url;
 
         await RunAsync();
     }
@@ -44,10 +51,12 @@ internal class RMSClient
     /// <returns></returns>
     public static async Task RunAsync()
     {
-        if (client == null) Logger?.LogInformation($@"{nameof(RunAsync)}: wrong params");
+        if (Http_client == null) { 
+            Logger?.LogInformation($@"{nameof(RunAsync)}: wrong params");
+            return;
+        };
         
-
-        var robotApiClient = new RobotApiClient(client, baseUrl??"");
+        var robotApiClient = new RobotApiClient(Http_client, BaseUrl??"");
 
         // Создание заголовка робота
         var robotHeader = new RobotHeaderDto((byte)_Header.msgType, _Header.version, _Header.robotId, _Header.timestamp);
@@ -69,7 +78,7 @@ internal class RMSClient
         // Создание отчета о состоянии
         var stateReport = new StateReportDto
         {
-            HeaderId  = createdHeader.Id,
+            HeaderId  = createdHeader?.Id??0,
             CurrentPoseId = createdPose.Id,
             TargetPoseId = createdPose.Id,
             Velocity = _StateReport.velocity,
